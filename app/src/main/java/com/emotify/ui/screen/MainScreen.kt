@@ -15,6 +15,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.emotify.ui.components.MiniPlayer
 import com.emotify.ui.navigations.Screen
+import com.emotify.ui.screen.HomeScreen
 
 @Composable
 fun MainScreen(rootNavController: NavHostController) {
@@ -64,8 +65,13 @@ fun MainScreen(rootNavController: NavHostController) {
             // NavHost nội bộ cho 3 màn hình chính
             NavHost(navController = mainNavController, startDestination = Screen.BottomScreen.Home.route) {
                 composable(Screen.BottomScreen.Home.route) {
-                    // Gọi HomeScreen của bạn ở đây
-                    Text(text = "Màn hình Home (Gợi ý theo Mood)")
+                    // THÊM CHỮ HOMESCREEN ĐỂ BỌC LẠI NHA BẠN:
+                    HomeScreen(
+                        onSongClick = { song ->
+                            // Khi bấm vào bài hát, tạm thời in Log kiểm tra
+                            android.util.Log.d("EmotifyMusic", "Bấm phát bài: ${song.title}")
+                        }
+                    ) // Nhớ dấu đóng ngoặc đơn này nha
                 }
                 composable(Screen.BottomScreen.Search.route) {
                     // Gọi SearchScreen của bạn ở đây

@@ -10,6 +10,7 @@ import com.emotify.ui.screen.MainScreen
 import androidx.compose.foundation.clickable
 import com.emotify.ui.screen.auth.LoginScreen
 import com.emotify.ui.screen.auth.RegisterScreen
+import com.emotify.ui.screen.HomeScreen
 
 @Composable
 fun SetupNavGraph(navController: NavHostController) {

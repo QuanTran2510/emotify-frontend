@@ -113,4 +113,6 @@ dependencies {
     implementation("com.facebook.android:facebook-login:17.0.0")
 
     implementation("androidx.compose.runtime:runtime-livedata:1.7.5")
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }

@@ -1,10 +1,11 @@
 package com.emotify.data.model
 
 data class Song(
-    val id: String,          // ID bài hát để sau này truyền sang màn hình phát nhạc chi tiết
-    val title: String,       // Tên bài hát
-    val artist: String,      // Tên nghệ sĩ/ca sĩ
-    val coverUrl: String,    // Đường dẫn link hình ảnh bọc album (Cover Art)
-    val streamUrl: String,   // Đường dẫn link file nhạc mp3 để phát ngầm
-    val mood: String         // Tâm trạng của bài hát (Happy, Sad, Chill...) để lọc theo cảm xúc
+    val songId: String,       // Khớp "songId"
+    val title: String,        // Khớp "title" [cite: 121]
+    val artist: List<String>, // BẮT BUỘC PHẢI LÀ LIST STRING
+    val cover: String,        // Khớp "cover"
+    val url: String,          // Khớp "url"
+    val duration: Int,        // Khớp kiểu số trong hình DB của bạn (hoặc String tùy API bọc)
+    val mood: String          // Khớp "mood"
 )
