@@ -8,10 +8,16 @@ import com.emotify.data.model.HomeMoodData
 import com.google.firebase.auth.FirebaseAuth
 import com.emotify.data.remote.api.RetrofitClient
 import kotlinx.coroutines.launch
+import com.emotify.data.model.Song
+import com.emotify.data.remote.api.RetrofitClient.songApiService
+import kotlinx.coroutines.async
 
 sealed class MusicUiState {
     object Loading : MusicUiState()
-    data class Success(val moodData: HomeMoodData) : MusicUiState() // Trả về cục data phân loại sẵn
+    data class Success(
+        val moodData: HomeMoodData,
+        val trendingSongs: List<Song>
+    ) : MusicUiState()
     data class Error(val message: String) : MusicUiState()
 }
 
@@ -35,16 +41,30 @@ class MusicViewModel : ViewModel() {
             return
         }
 
-        // Lấy Token Firebase để gắn vào Header API
         currentUser.getIdToken(false).addOnSuccessListener { result ->
             val idToken = result.token
             if (idToken != null) {
                 viewModelScope.launch {
                     try {
-                        val response = authApiService.getHomeSongs("Bearer $idToken")
-                        if (response.isSuccessful && response.body()?.success == true) {
-                            // Thành công: Đẩy thẳng khối data chứa happy, sad, neutral sang UI [cite: 111, 114]
-                            _musicState.postValue(MusicUiState.Success(response.body()!!.data))
+                        val tokenBearer = "Bearer $idToken"
+
+                        // Chạy song song 2 API cùng lúc bằng async để tối ưu hóa tốc độ load app ⚡
+                        val homeDataDeferred = viewModelScope.async { authApiService.getHomeSongs(tokenBearer) }
+                        val trendingDataDeferred = viewModelScope.async { songApiService.getTrendingSongs(tokenBearer) }
+
+                        val homeResponse = homeDataDeferred.await()
+                        val trendingResponse = trendingDataDeferred.await()
+
+                        if (homeResponse.isSuccessful && homeResponse.body()?.success == true &&
+                            trendingResponse.isSuccessful && trendingResponse.body()?.success == true) {
+
+                            // Đẩy cả cục dữ liệu Mood lẫn danh sách bài xếp hạng lượt nghe giảm dần qua UI
+                            _musicState.postValue(
+                                MusicUiState.Success(
+                                    moodData = homeResponse.body()!!.data,
+                                    trendingSongs = trendingResponse.body()!!.trending
+                                )
+                            )
                         } else {
                             _musicState.postValue(MusicUiState.Error("Server từ chối cấp dữ liệu nhạc"))
                         }

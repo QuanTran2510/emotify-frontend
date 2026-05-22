@@ -58,12 +58,12 @@ fun HomeScreen(
             is MusicUiState.Success -> {
                 // SỬA TẠI ĐÂY: Lấy trực tiếp các danh sách đã được Server Node.js phân loại sẵn
                 val moodData = state.moodData
+                val trendingSongs = state.trendingSongs
                 val happySongs = moodData.happy
                 val sadSongs = moodData.sad
                 val neutralSongs = moodData.neutral
 
                 // Tạm thời lấy tối đa 5 bài của Happy và Sad gộp lại làm Trending trong lúc đợi API Trending riêng
-                val trendingSongs = (happySongs.take(3) + sadSongs.take(2)).shuffled()
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),

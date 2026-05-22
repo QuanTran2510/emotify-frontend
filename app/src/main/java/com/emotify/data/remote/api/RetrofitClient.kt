@@ -24,4 +24,13 @@ object RetrofitClient {
             .build()
             .create(AuthApiService::class.java)
     }
+
+    val songApiService: SongApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(SongApiService::class.java)
+    }
 }

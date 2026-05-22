@@ -1,6 +1,9 @@
 package com.emotify.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Song(
+    @SerializedName("songId")
     val songId: String,       // Khớp "songId"
     val title: String,        // Khớp "title" [cite: 121]
     val artist: List<String>, // BẮT BUỘC PHẢI LÀ LIST STRING
