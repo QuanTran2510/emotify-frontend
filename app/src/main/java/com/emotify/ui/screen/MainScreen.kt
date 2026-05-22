@@ -15,10 +15,15 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.emotify.ui.components.MiniPlayer
 import com.emotify.ui.navigations.Screen
-import com.emotify.ui.screen.HomeScreen
+import com.emotify.ui.screen.library.LibraryScreen
+import com.emotify.ui.screen.player.PlayerViewModel
+import com.emotify.ui.screen.search.SearchScreen
 
 @Composable
-fun MainScreen(rootNavController: NavHostController) {
+fun MainScreen(
+    rootNavController: NavHostController,
+    playerViewModel: PlayerViewModel   // Nhận từ NavGraph để dùng chung với Player và MiniPlayer
+) {
     val mainNavController = rememberNavController()
     val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -32,12 +37,14 @@ fun MainScreen(rootNavController: NavHostController) {
     Scaffold(
         bottomBar = {
             Column {
-                // 1. Luôn ghim MiniPlayer ở trên Bottom Navigation Bar
-                MiniPlayer(onPlayerClick = {
-                    rootNavController.navigate(Screen.Player.route)
-                })
+                // MiniPlayer ghim ở trên Bottom Nav — dùng chung playerViewModel
+                MiniPlayer(
+                    onPlayerClick = {
+                        rootNavController.navigate(Screen.Player.route)
+                    },
+                    playerViewModel = playerViewModel
+                )
 
-                // 2. Bottom Navigation Bar
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
                     items.forEach { screen ->
                         NavigationBarItem(
@@ -62,24 +69,31 @@ fun MainScreen(rootNavController: NavHostController) {
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
-            // NavHost nội bộ cho 3 màn hình chính
-            NavHost(navController = mainNavController, startDestination = Screen.BottomScreen.Home.route) {
+            NavHost(
+                navController = mainNavController,
+                startDestination = Screen.BottomScreen.Home.route
+            ) {
                 composable(Screen.BottomScreen.Home.route) {
-                    // THÊM CHỮ HOMESCREEN ĐỂ BỌC LẠI NHA BẠN:
                     HomeScreen(
                         onSongClick = { song ->
-                            // Khi bấm vào bài hát, tạm thời in Log kiểm tra
-                            android.util.Log.d("EmotifyMusic", "Bấm phát bài: ${song.title}")
+                            // Khi bấm vào bài hát: phát nhạc + mở PlayerScreen
+                            // Lấy toàn bộ danh sách bài từ MusicViewModel làm queue
+                            playerViewModel.playSong(song)
+                            rootNavController.navigate(Screen.Player.route)
                         }
-                    ) // Nhớ dấu đóng ngoặc đơn này nha
+                    )
                 }
                 composable(Screen.BottomScreen.Search.route) {
-                    // Gọi SearchScreen của bạn ở đây
-                    Text(text = "Màn hình Tìm kiếm bài hát")
+                    SearchScreen(
+                        onSongClick = { song ->
+                            playerViewModel.playSong(song)
+                            rootNavController.navigate(Screen.Player.route)
+                        },
+                        playerViewModel = playerViewModel
+                    )
                 }
                 composable(Screen.BottomScreen.Library.route) {
-                    // Gọi LibraryScreen của bạn ở đây
-                    Text(text = "Màn hình Thư viện & Playlist")
+                    LibraryScreen(playerViewModel = playerViewModel)
                 }
             }
         }

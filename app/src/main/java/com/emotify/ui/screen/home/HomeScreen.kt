@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.emotify.data.model.Song
+import com.emotify.ui.screen.home.MusicUiState
+import com.emotify.ui.screen.home.MusicViewModel
 
 @Composable
 fun HomeScreen(

@@ -1,4 +1,4 @@
-package com.emotify.ui.screen
+package com.emotify.ui.screen.home
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
