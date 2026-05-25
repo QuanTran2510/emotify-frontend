@@ -2,7 +2,6 @@ package com.emotify.ui.screen.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -12,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -22,7 +20,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.emotify.ui.screen.auth.AuthState
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.SolidColor
+import com.emotify.R
 
 @Composable
 fun LoginScreen(
@@ -110,13 +111,18 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Nút Đăng nhập Email truyền thống
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ==================== NÚT ĐĂNG NHẬP EMAIL ====================
             Button(
                 onClick = { viewModel.loginWithEmail(email, password) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                shape = RoundedCornerShape(12.dp),           // ← Thêm cái này
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
                 Text(
                     text = "ĐĂNG NHẬP",
@@ -127,7 +133,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- ĐƯỜNG PHÂN CÁCH HOẶC ĐĂNG NHẬP KHÁC ---
+            // --- ĐƯỜNG PHÂN CÁCH ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -144,76 +150,69 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // NÚT OAUTH2 GOOGLE SIGN-IN
-            OutlinedButton(
+            // ==================== NÚT GOOGLE ====================
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ==================== NÚT GOOGLE ====================
+            Button(
                 onClick = { viewModel.loginWithGoogle(context) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
-                    brush = androidx.compose.ui.graphics.SolidColor(Color.DarkGray)
-                )
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1F1F1F))
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    // Logo bên trái
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_google_logo),
+                        contentDescription = "Google Logo",
+                        tint = Color.Unspecified,
                         modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "G",
-                            color = Color(0xFF4285F4),
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
+                            .size(24.dp)
+                            .align(Alignment.CenterStart)
+                            .padding(start = 1.dp)
+                    )
+
+                    // Text căn giữa
                     Text(
-                        text = "Sign in with Google",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                        text = "Google",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // NÚT OAUTH2 FACEBOOK SIGN-IN
+            // ==================== NÚT FACEBOOK ====================
             Button(
                 onClick = { viewModel.loginWithFacebook(context, com.emotify.MainActivity.callbackManager) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2)) // Màu xanh đặc trưng của Facebook
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1F1F1F))
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    // Logo bên trái
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_facebook_logo),
+                        contentDescription = "Facebook Logo",
+                        tint = Color.Unspecified,
                         modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "f",
-                            color = Color(0xFF1877F2),
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 22.sp
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
+                            .size(24.dp)
+                            .align(Alignment.CenterStart)
+                            .padding(start = 1.dp)
+                    )
+
+                    // Text căn giữa
                     Text(
-                        text = "Sign in with Facebook",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color.White
+                        text = "Facebook",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
             }
