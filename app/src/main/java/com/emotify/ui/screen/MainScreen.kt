@@ -15,6 +15,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.emotify.ui.components.MiniPlayer
 import com.emotify.ui.navigations.Screen
+import com.emotify.ui.screen.home.HomeScreen
+import com.emotify.ui.screen.home.MusicViewModel
 import com.emotify.ui.screen.library.LibraryScreen
 import com.emotify.ui.screen.player.PlayerViewModel
 import com.emotify.ui.screen.search.SearchScreen
@@ -22,7 +24,8 @@ import com.emotify.ui.screen.search.SearchScreen
 @Composable
 fun MainScreen(
     rootNavController: NavHostController,
-    playerViewModel: PlayerViewModel   // Nhận từ NavGraph để dùng chung với Player và MiniPlayer
+    playerViewModel: PlayerViewModel,
+    musicViewModel: MusicViewModel
 ) {
     val mainNavController = rememberNavController()
     val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
@@ -37,11 +40,8 @@ fun MainScreen(
     Scaffold(
         bottomBar = {
             Column {
-                // MiniPlayer ghim ở trên Bottom Nav — dùng chung playerViewModel
                 MiniPlayer(
-                    onPlayerClick = {
-                        rootNavController.navigate(Screen.Player.route)
-                    },
+                    onPlayerClick = { rootNavController.navigate(Screen.Player.route) },
                     playerViewModel = playerViewModel
                 )
 
@@ -54,9 +54,7 @@ fun MainScreen(
                             onClick = {
                                 if (currentRoute != screen.route) {
                                     mainNavController.navigate(screen.route) {
-                                        popUpTo(mainNavController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
+                                        popUpTo(mainNavController.graph.findStartDestination().id) { saveState = true }
                                         launchSingleTop = true
                                         restoreState = true
                                     }
@@ -75,10 +73,10 @@ fun MainScreen(
             ) {
                 composable(Screen.BottomScreen.Home.route) {
                     HomeScreen(
-                        onSongClick = { song ->
-                            // Khi bấm vào bài hát: phát nhạc + mở PlayerScreen
-                            // Lấy toàn bộ danh sách bài từ MusicViewModel làm queue
-                            playerViewModel.playSong(song)
+                        musicViewModel = musicViewModel,
+                        onCameraClick = { rootNavController.navigate(Screen.Camera.route) },
+                        onSongClick = { song, queue ->
+                            playerViewModel.playSong(song, queue)
                             rootNavController.navigate(Screen.Player.route)
                         }
                     )
@@ -93,7 +91,12 @@ fun MainScreen(
                     )
                 }
                 composable(Screen.BottomScreen.Library.route) {
-                    LibraryScreen(playerViewModel = playerViewModel)
+                    LibraryScreen(
+                        playerViewModel = playerViewModel,
+                        onPlaylistClick = { playlistId ->
+                            rootNavController.navigate(Screen.PlaylistDetail.createRoute(playlistId))
+                        }
+                    )
                 }
             }
         }
