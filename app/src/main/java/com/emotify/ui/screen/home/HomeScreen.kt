@@ -61,7 +61,6 @@ fun HomeScreen(
                 val trendingSongs = state.trendingSongs
                 val happySongs = moodData.happy
                 val sadSongs = moodData.sad
-                val relaxedSongs = moodData.relaxed
                 val neutralSongs = moodData.neutral
                 val detectedMoodSongs = moodData.songsByMood(selectedMood)
 
@@ -113,9 +112,6 @@ fun HomeScreen(
                     if (sadSongs.isNotEmpty()) {
                         item { MusicSection("Góc Nhỏ Cho Tâm Trạng", sadSongs) { song -> onSongClick(song, sadSongs) } }
                     }
-                    if (relaxedSongs.isNotEmpty()) {
-                        item { MusicSection("Thư Giãn Nhẹ Nhàng", relaxedSongs) { song -> onSongClick(song, relaxedSongs) } }
-                    }
                     if (neutralSongs.isNotEmpty()) {
                         item { MusicSection("Bình Yên Và Tập Trung", neutralSongs) { song -> onSongClick(song, neutralSongs) } }
                     }
@@ -129,7 +125,6 @@ private fun moodLabel(mood: String?): String {
     return when (mood?.lowercase()) {
         "happy" -> "Happy 😊"
         "sad" -> "Sad 😔"
-        "relaxed" -> "Relaxed 😌"
         "neutral" -> "Neutral 😐"
         else -> "tâm trạng hiện tại"
     }

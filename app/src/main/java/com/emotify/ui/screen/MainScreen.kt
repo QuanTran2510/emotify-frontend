@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -16,17 +18,21 @@ import androidx.navigation.compose.rememberNavController
 import com.emotify.ui.components.MiniPlayer
 import com.emotify.ui.navigations.Screen
 import com.emotify.ui.screen.home.HomeScreen
+import com.emotify.ui.screen.auth.AuthViewModel
 import com.emotify.ui.screen.home.MusicViewModel
 import com.emotify.ui.screen.library.LibraryScreen
 import com.emotify.ui.screen.player.PlayerViewModel
+import com.emotify.ui.screen.profile.ProfileScreen
 import com.emotify.ui.screen.search.SearchScreen
 
 @Composable
 fun MainScreen(
     rootNavController: NavHostController,
     playerViewModel: PlayerViewModel,
-    musicViewModel: MusicViewModel
+    musicViewModel: MusicViewModel,
+    authViewModel: AuthViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val mainNavController = rememberNavController()
     val navBackStackEntry by mainNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -34,7 +40,8 @@ fun MainScreen(
     val items = listOf(
         Screen.BottomScreen.Home,
         Screen.BottomScreen.Search,
-        Screen.BottomScreen.Library
+        Screen.BottomScreen.Library,
+        Screen.BottomScreen.Profile
     )
 
     Scaffold(
@@ -95,6 +102,17 @@ fun MainScreen(
                         playerViewModel = playerViewModel,
                         onPlaylistClick = { playlistId ->
                             rootNavController.navigate(Screen.PlaylistDetail.createRoute(playlistId))
+                        }
+                    )
+                }
+                composable(Screen.BottomScreen.Profile.route) {
+                    ProfileScreen(
+                        onLogout = {
+                            authViewModel.logout(context)
+                            rootNavController.navigate(Screen.Auth.route) {
+                                popUpTo(Screen.Main.route) { inclusive = true }
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }

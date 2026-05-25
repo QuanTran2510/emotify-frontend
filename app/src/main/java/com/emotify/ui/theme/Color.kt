@@ -7,7 +7,7 @@ val DarkBackground = Color(0xFF121212) // Nền chính cực tối
 val DarkSurface = Color(0xFF1E1E1E)    // Nền của các ô item, card, mini player
 val DarkSurfaceVariant = Color(0xFF2A2A2A) // Nền của Bottom Navigation Bar
 
-val PrimaryGreen = Color(0xFF1DB954)   // Màu xanh điểm nhấn (Giống Spotify) hoặc bạn có thể đổi tùy ý
+val PrimaryGreen = Color(0xFF38D9C6)   // Màu xanh mint/teal riêng của Emotify
 val SecondaryGray = Color(0xFFB3B3B3) // Màu chữ phụ (Ca sĩ, thời gian)
 val TextWhite = Color(0xFFFFFFFF)     // Màu chữ chính (Tên bài hát, tiêu đề)
 
@@ -15,5 +15,5 @@ val TextWhite = Color(0xFFFFFFFF)     // Màu chữ chính (Tên bài hát, tiê
 val LightBackground = Color(0xFFF8F9FA)
 val LightSurface = Color(0xFFFFFFFF)
 val LightSurfaceVariant = Color(0xFFE9ECEF)
-val PrimaryLight = Color(0xFF1AA34A)
+val PrimaryLight = Color(0xFF22B8A8)
 val TextBlack = Color(0xFF212529)

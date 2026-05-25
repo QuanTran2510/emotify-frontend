@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoodBad
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SentimentSatisfied
 import androidx.compose.material.icons.filled.SentimentVerySatisfied
 import androidx.compose.material.icons.filled.SentimentNeutral
 import androidx.compose.material3.*
@@ -75,7 +74,6 @@ fun SearchScreen(
             buildList {
                 addAll(data.happy)
                 addAll(data.sad)
-                addAll(data.relaxed)
                 addAll(data.neutral)
             }
                 // Sử dụng distinctBy an toàn (nếu không có id thì dùng title + artist)
@@ -101,7 +99,6 @@ fun SearchScreen(
     val moodChips = listOf(
         MoodChip("Vui vẻ", "happy", Icons.Default.SentimentVerySatisfied, Color(0xFFFF6B35)),
         MoodChip("Buồn", "sad", Icons.Default.MoodBad, Color(0xFF4A90D9)),
-        MoodChip("Thư giãn", "relaxed", Icons.Default.SentimentSatisfied, Color(0xFF27AE60)),
         MoodChip("Trung lập", "neutral", Icons.Default.SentimentNeutral, Color(0xFF8E44AD))
     )
 
@@ -284,7 +281,6 @@ fun SearchSongRow(song: Song, onClick: () -> Unit) {
         val moodColor = when (song.mood) {
             "happy" -> Color(0xFFFF6B35)
             "sad" -> Color(0xFF4A90D9)
-            "relaxed" -> Color(0xFF27AE60)
             else -> Color(0xFF8E44AD)
         }
 

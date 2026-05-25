@@ -29,7 +29,7 @@ import com.emotify.data.model.Playlist
 
 private val BgDark = Color(0xFF121212)
 private val SurfaceDark = Color(0xFF1E1E1E)
-private val GreenAccent = Color(0xFF1DB954)
+private val GreenAccent = Color(0xFF38D9C6)
 private val TextPrimary = Color(0xFFFFFFFF)
 private val TextSecondary = Color(0xFFAAAAAA)
 

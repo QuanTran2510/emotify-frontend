@@ -3,6 +3,7 @@ package com.emotify.ui.navigations
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -18,6 +19,7 @@ sealed class Screen(val route: String) {
         object Home : BottomScreen("home", "Home", Icons.Default.Home)
         object Search : BottomScreen("search", "Search", Icons.Default.Search)
         object Library : BottomScreen("library", "Library", Icons.Default.List)
+        object Profile : BottomScreen("profile", "Cá nhân", Icons.Default.Person)
     }
 
     object Camera : Screen("camera")

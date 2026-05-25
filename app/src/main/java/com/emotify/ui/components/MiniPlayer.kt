@@ -58,11 +58,11 @@ fun MiniPlayer(
             .background(Color(0xFF1A1A1A))
             .clickable { onPlayerClick() }
     ) {
-        // Thanh tiến trình mỏng ở trên cùng MiniPlayer (giống Spotify)
+        // Thanh tiến trình mỏng ở trên cùng MiniPlayer
         LinearProgressIndicator(
             progress = { animatedProgress },
             modifier = Modifier.fillMaxWidth().height(2.dp),
-            color = Color(0xFF1DB954),        // Màu xanh Spotify-like
+            color = Color(0xFF38D9C6),        // Màu xanh mint/teal riêng của Emotify
             trackColor = Color(0xFF333333)
         )
 

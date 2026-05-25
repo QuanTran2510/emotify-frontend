@@ -2,6 +2,7 @@ package com.emotify.ui.navigations
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.auth.FirebaseAuth
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,7 +23,7 @@ fun SetupNavGraph(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Auth.route,
+        startDestination = if (FirebaseAuth.getInstance().currentUser != null) Screen.Main.route else Screen.Auth.route,
         route = "root_graph"
     ) {
         navigation(startDestination = Screen.Login.route, route = Screen.Auth.route) {

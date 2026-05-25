@@ -49,8 +49,8 @@ fun detectMoodFromFace(smilingProb: Float, leftEyeOpen: Float, rightEyeOpen: Flo
     return when {
         smilingProb > 0.7f -> "happy"
         avgEyeOpen < 0.3f && smilingProb < 0.3f -> "sad"
-        smilingProb < 0.2f && avgEyeOpen > 0.7f -> "neutral"
-        else -> "relaxed"
+        smilingProb < 0.25f && avgEyeOpen > 0.65f -> "neutral"
+        else -> "neutral"
     }
 }
 
@@ -223,7 +223,7 @@ fun CameraScreen(
                     .border(
                         width = 2.dp,
                         color = when (scanState) {
-                            is ScanState.Result -> Color(0xFF1DB954)
+                            is ScanState.Result -> Color(0xFF38D9C6)
                             is ScanState.Scanning -> Color(0xFFFFD700)
                             is ScanState.NoFace -> Color(0xFFFF4444)
                             else -> Color.White.copy(alpha = 0.6f)
@@ -244,7 +244,6 @@ fun CameraScreen(
                             val (emoji, label, color) = when (state.mood) {
                                 "happy" -> Triple("😊", "Vui vẻ", Color(0xFFFF6B35))
                                 "sad" -> Triple("😔", "Buồn bã", Color(0xFF4A90D9))
-                                "relaxed" -> Triple("😌", "Thư giãn", Color(0xFF27AE60))
                                 else -> Triple("😐", "Trung lập", Color(0xFFAAAAAA))
                             }
                             Text(emoji, fontSize = 48.sp)
@@ -273,7 +272,7 @@ fun CameraScreen(
                     Button(
                         onClick = { onMoodDetected(detectedMood) },
                         modifier = Modifier.fillMaxWidth().height(52.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF38D9C6)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Icon(Icons.Default.MusicNote, contentDescription = null, tint = Color.Black)

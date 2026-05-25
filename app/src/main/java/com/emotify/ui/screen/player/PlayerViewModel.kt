@@ -225,7 +225,6 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         val label = when (mood.lowercase()) {
             "happy" -> "😊 Happy"
             "sad" -> "😔 Sad"
-            "relaxed" -> "😌 Relaxed"
             else -> "😐 Neutral"
         }
         val newHistory = listOf("$label • ${System.currentTimeMillis()}") + ((_uiState.value?.moodHistory ?: emptyList()))
