@@ -75,19 +75,12 @@ fun SearchScreen(
             buildList {
                 addAll(data.happy)
                 addAll(data.sad)
+                addAll(data.relaxed)
                 addAll(data.neutral)
-
-                // Xử lý relaxed an toàn (nếu không có trường relaxed thì bỏ qua)
-                try {
-                    val relaxedList = data::class.java.getDeclaredField("relaxed").get(data) as? List<Song>
-                    relaxedList?.let { addAll(it) }
-                } catch (_: Exception) {
-                    // relaxed không tồn tại → bỏ qua
-                }
             }
                 // Sử dụng distinctBy an toàn (nếu không có id thì dùng title + artist)
                 .distinctBy { song ->
-                    song.songId ?: "${song.title}-${song.artist.joinToString(",")}"
+                    song.songId
                 }
         } else emptyList()
     }

@@ -28,6 +28,13 @@ class MusicViewModel : ViewModel() {
     private val _musicState = MutableLiveData<MusicUiState>(MusicUiState.Loading)
     val musicState: LiveData<MusicUiState> = _musicState
 
+    private val _selectedMood = MutableLiveData<String?>(null)
+    val selectedMood: LiveData<String?> = _selectedMood
+
+    fun setSelectedMood(mood: String?) {
+        _selectedMood.value = mood?.lowercase()
+    }
+
     init {
         fetchSongsFromServer()
     }
