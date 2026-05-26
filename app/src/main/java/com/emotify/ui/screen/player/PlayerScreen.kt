@@ -85,7 +85,12 @@ fun PlayerScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-                IconButton(onClick = { showPlaylistDialog = true }) {
+                IconButton(
+                    onClick = {
+                        playerViewModel.getPlaylists()
+                        showPlaylistDialog = true
+                    }
+                ) {
                     Icon(Icons.Default.PlaylistAdd, contentDescription = "Thêm vào playlist", tint = TextPrimary)
                 }
             }

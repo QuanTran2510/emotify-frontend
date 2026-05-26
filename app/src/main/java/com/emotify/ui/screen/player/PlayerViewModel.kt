@@ -400,6 +400,38 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun getPlaylists() {
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+
+            try {
+                val response = libraryApiService.getPlaylists(token)
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val playlists = response.body()?.playlists ?: emptyList()
+
+                    val state = _uiState.value ?: PlayerUiState()
+
+                    _uiState.value = state.copy(
+                        playlists = playlists,
+                        message = null
+                    )
+                } else {
+                    _uiState.value = _uiState.value?.copy(
+                        message = response.body()?.message
+                            ?: "Không tải được playlists"
+                    )
+                }
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value?.copy(
+                    message = e.localizedMessage
+                        ?: "Lỗi tải playlists"
+                )
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         exoPlayer.release()
