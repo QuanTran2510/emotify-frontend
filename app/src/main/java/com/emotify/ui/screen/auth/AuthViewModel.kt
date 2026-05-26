@@ -159,7 +159,7 @@ class AuthViewModel : ViewModel() {
         // 3. Gọi lệnh mở màn hình đăng nhập (Truyền biến activity an toàn đã check ở trên vào)
         LoginManager.getInstance().logInWithReadPermissions(
             activity,
-            listOf("public_profile", "email")
+            listOf("public_profile")
         )
     }
 

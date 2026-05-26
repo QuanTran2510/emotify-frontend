@@ -148,8 +148,6 @@ fun LoginScreen(
                 HorizontalDivider(modifier = Modifier.weight(1f), color = Color.DarkGray)
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
             // ==================== NÚT GOOGLE ====================
             Spacer(modifier = Modifier.height(24.dp))
 
