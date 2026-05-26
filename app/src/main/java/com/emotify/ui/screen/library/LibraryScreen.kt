@@ -31,6 +31,12 @@ import com.emotify.ui.screen.player.PlayerViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 enum class LibraryTab(val label: String) {
     PLAYLISTS("Playlist"),
@@ -41,15 +47,31 @@ enum class LibraryTab(val label: String) {
 
 @Composable
 fun LibraryScreen(
-    playerViewModel: PlayerViewModel = viewModel(),
     onPlaylistClick: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val playerViewModel: PlayerViewModel = viewModel(viewModelStoreOwner = context as ViewModelStoreOwner)
     var selectedTab by remember { mutableStateOf(LibraryTab.PLAYLISTS) }
     var showCreateDialog by remember { mutableStateOf(false) }
     val playerState by playerViewModel.uiState.observeAsState()
 
-    LaunchedEffect(Unit) {
-        playerViewModel.refreshLibrary()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            // Cứ mỗi khi màn hình Library được "hiển thị lên trước mắt người dùng" (ON_RESUME)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                playerViewModel.refreshLibrary()
+            }
+        }
+
+        // Đăng ký bộ lắng nghe vòng đời
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // Hủy đăng ký khi thoát màn hình để tránh rò rỉ bộ nhớ (Memory Leak)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {

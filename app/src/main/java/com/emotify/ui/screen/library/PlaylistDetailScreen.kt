@@ -16,13 +16,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.emotify.ui.screen.player.PlayerViewModel
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun PlaylistDetailScreen(
     playlistId: String,
     onBack: () -> Unit,
-    playerViewModel: PlayerViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val playerViewModel: PlayerViewModel = viewModel(viewModelStoreOwner = context as ViewModelStoreOwner)
     val state by playerViewModel.uiState.observeAsState()
 
     LaunchedEffect(playlistId) {

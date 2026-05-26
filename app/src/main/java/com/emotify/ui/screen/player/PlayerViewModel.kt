@@ -19,6 +19,7 @@ import com.emotify.data.remote.api.FirebaseTokenProvider
 import com.emotify.data.remote.api.RetrofitClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 
 // Trạng thái UI của trình phát nhạc + thư viện cá nhân lấy từ backend API.
 data class PlayerUiState(
@@ -90,23 +91,72 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun refreshLibrary() {
         viewModelScope.launch {
-            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
             _uiState.value = _uiState.value?.copy(isLibraryLoading = true, message = null)
+
+            // 1. Vòng lặp chờ Token Firebase sẵn sàng khi mới bật app
+            var token: String? = null
+            var attempts = 0
+            while (token == null && attempts < 10) {
+                token = FirebaseTokenProvider.bearerToken()
+                if (token == null) {
+                    delay(500)
+                    attempts++
+                }
+            }
+
+            if (token == null) {
+                _uiState.value = _uiState.value?.copy(
+                    isLibraryLoading = false,
+                    message = "Không thể xác thực tài khoản"
+                )
+                return@launch
+            }
+
+            // 2. Kích hoạt SONG SONG cả 4 API để tối ưu tốc độ mạng
             try {
-                val response = libraryApiService.getLibrary(token)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val library = response.body()!!.library
+                val libraryDeferred = async { libraryApiService.getLibrary(token) }
+                val playlistsDeferred = async { libraryApiService.getPlaylists(token) }
+                val favoriteIdsDeferred = async { libraryApiService.getFavoriteIds(token) }
+                val recentPlayedDeferred = async { libraryApiService.getRecentlyPlayed(token) }
+
+                // Đợi tất cả API trả về kết quả
+                val libraryResponse = libraryDeferred.await()
+                val playlistsResponse = playlistsDeferred.await()
+                val favoriteIdsResponse = favoriteIdsDeferred.await()
+                val recentPlayedResponse = recentPlayedDeferred.await()
+
+                val libBody = libraryResponse.body()
+                if (libraryResponse.isSuccessful && libBody != null && libBody.success) {
+                    val libraryData = libBody.library
+
+                    // --- Xử lý dữ liệu PLAYLIST ---
+                    val playBody = playlistsResponse.body()
+                    val finalPlaylists = if (playlistsResponse.isSuccessful && playBody != null && playBody.success) {
+                        playBody.playlists
+                    } else {
+                        libraryData.playlists
+                    }
+
+                    // --- Xử lý dữ liệu SONG YÊU THÍCH ---
+                    // Bạn có thể giữ nguyên danh sách bài hát đầy đủ (List<Song>) từ API library tổng,
+                    // hoặc xử lý thêm dựa trên danh sách ID từ API getFavoriteIds nếu cần.
+                    val finalFavorites = libraryData.favorites
+
+                    // --- Xử lý dữ liệu NGHE GẦN ĐÂY ---
+                    val finalRecent = libraryData.recentlyPlayed
+
+                    // 3. Cập nhật một lần duy nhất lên UI State
                     _uiState.value = _uiState.value?.copy(
-                        playlists = library.playlists,
-                        favoriteSongs = library.favorites,
-                        recentSongs = library.recentlyPlayed,
+                        playlists = finalPlaylists,
+                        favoriteSongs = finalFavorites,
+                        recentSongs = finalRecent,
                         isLibraryLoading = false,
                         message = null
                     )
                 } else {
                     _uiState.value = _uiState.value?.copy(
                         isLibraryLoading = false,
-                        message = response.body()?.message ?: "Không tải được thư viện"
+                        message = libBody?.message ?: "Không tải được thư viện"
                     )
                 }
             } catch (e: Exception) {

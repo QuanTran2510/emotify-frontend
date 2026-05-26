@@ -99,7 +99,6 @@ fun MainScreen(
                 }
                 composable(Screen.BottomScreen.Library.route) {
                     LibraryScreen(
-                        playerViewModel = playerViewModel,
                         onPlaylistClick = { playlistId ->
                             rootNavController.navigate(Screen.PlaylistDetail.createRoute(playlistId))
                         }

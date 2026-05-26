@@ -13,8 +13,8 @@ data class UserProfile(
     @SerializedName("email") val email: String = "",
     @SerializedName("displayName") val displayName: String? = null,
     @SerializedName("photoURL") val photoURL: String? = null,
-    @SerializedName("favorites") val favorites: List<String> = emptyList(),
-    @SerializedName("recentlyPlayed") val recentlyPlayed: List<String> = emptyList(),
+    @SerializedName("favorites") val favorites: List<Any> = emptyList(),
+    @SerializedName("recentlyPlayed") val recentlyPlayed: List<Any> = emptyList(),
     @SerializedName("preferredMoods") val preferredMoods: List<String> = emptyList(),
     @SerializedName("createdAt") val createdAt: String = "",
     @SerializedName("lastLogin") val lastLogin: String = ""

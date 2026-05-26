@@ -23,35 +23,35 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface LibraryApiService {
-    @GET("library")
+    @GET("api/users/library")
     suspend fun getLibrary(
         @Header("Authorization") token: String
     ): Response<LibraryResponse>
 
-    @POST("favorites")
+    @POST("api/users/favorites")
     suspend fun addFavorite(
         @Header("Authorization") token: String,
         @Body request: FavoriteRequest
     ): Response<MessageResponse>
 
-    @HTTP(method = "DELETE", path = "favorites", hasBody = true)
+    @HTTP(method = "DELETE", path = "api/users/favorites", hasBody = true)
     suspend fun removeFavorite(
         @Header("Authorization") token: String,
         @Body request: FavoriteRequest
     ): Response<MessageResponse>
 
-    @GET("favorites")
+    @GET("api/users/favorites")
     suspend fun getFavoriteIds(
         @Header("Authorization") token: String
     ): Response<FavoritesResponse>
 
-    @POST("recently-played")
+    @POST("api/users/recently-played")
     suspend fun addRecentlyPlayed(
         @Header("Authorization") token: String,
         @Body request: RecentlyPlayedRequest
     ): Response<MessageResponse>
 
-    @GET("recently-played")
+    @GET("api/users/recently-played")
     suspend fun getRecentlyPlayed(
         @Header("Authorization") token: String
     ): Response<RecentlyPlayedResponse>

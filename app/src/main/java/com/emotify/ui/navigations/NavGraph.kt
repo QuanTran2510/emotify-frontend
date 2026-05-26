@@ -1,6 +1,7 @@
 package com.emotify.ui.navigations
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect // THÊM IMPORT NÀY
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import androidx.navigation.NavHostController
@@ -21,6 +22,14 @@ fun SetupNavGraph(navController: NavHostController) {
     val playerViewModel: PlayerViewModel = viewModel()
     val musicViewModel: MusicViewModel = viewModel()
 
+    // 💡 ĐOẠN CODE QUYẾT ĐỊNH SỬA Ở ĐÂY:
+    // Kiểm tra ngay khi start app từ đầu, nếu có user đăng nhập sẵn, chủ động tải library liền!
+    LaunchedEffect(Unit) {
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            playerViewModel.refreshLibrary()
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = if (FirebaseAuth.getInstance().currentUser != null) Screen.Main.route else Screen.Auth.route,
@@ -30,6 +39,8 @@ fun SetupNavGraph(navController: NavHostController) {
             composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
+                        // 💡 KHI ĐĂNG NHẬP THÀNH CÔNG: Cũng chủ động ra lệnh load data luôn
+                        playerViewModel.refreshLibrary()
                         navController.navigate(Screen.Main.route) {
                             popUpTo(Screen.Auth.route) { inclusive = true }
                         }
@@ -77,7 +88,6 @@ fun SetupNavGraph(navController: NavHostController) {
             PlaylistDetailScreen(
                 playlistId = playlistId,
                 onBack = { navController.popBackStack() },
-                playerViewModel = playerViewModel
             )
         }
     }
