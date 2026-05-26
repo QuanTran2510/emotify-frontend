@@ -11,17 +11,17 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 
 interface AuthApiService {
-    @POST("auth")
+    @POST("api/users/auth")
     suspend fun syncUserWithBackend(
         @Header("Authorization") token: String
     ): Response<AuthResponse>
 
-    @GET("profile")
+    @GET("api/users/profile")
     suspend fun getProfile(
         @Header("Authorization") token: String
     ): Response<ProfileResponse>
 
-    @PATCH("profile")
+    @PATCH("api/users/profile")
     suspend fun updateProfile(
         @Header("Authorization") token: String,
         @Body request: UpdateProfileRequest

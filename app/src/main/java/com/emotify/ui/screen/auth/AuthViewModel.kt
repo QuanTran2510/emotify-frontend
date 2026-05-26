@@ -188,7 +188,9 @@ class AuthViewModel : ViewModel() {
                                 _authState.value = AuthState.Error("Dữ liệu người dùng trống")
                             }
                         } else {
-                            _authState.value = AuthState.Error(response.body()?.message ?: "Backend từ chối Token")
+                            val rawErrorBody = response.errorBody()?.string()
+                            val backendMessage = response.body()?.message
+                            _authState.value = AuthState.Error(backendMessage ?: "Mã lỗi: ${response.code()} - Body: $rawErrorBody")
                         }
                     } catch (e: Exception) {
                         _authState.value = AuthState.Error("Không kết nối được server Render: ${e.localizedMessage}")
