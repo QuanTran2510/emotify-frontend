@@ -22,7 +22,6 @@ sealed class MusicUiState {
 }
 
 class MusicViewModel : ViewModel() {
-    private val authApiService = RetrofitClient.authApiService
     private val firebaseAuth = FirebaseAuth.getInstance()
 
     private val _musicState = MutableLiveData<MusicUiState>(MusicUiState.Loading)
@@ -32,11 +31,44 @@ class MusicViewModel : ViewModel() {
     val selectedMood: LiveData<String?> = _selectedMood
 
     fun setSelectedMood(mood: String?) {
-        _selectedMood.value = mood?.lowercase()
+        val normalizedMood = mood?.lowercase()
+        _selectedMood.value = normalizedMood
+        if (!normalizedMood.isNullOrBlank()) {
+            fetchRecommendedByMood(normalizedMood)
+        }
     }
 
     init {
         fetchSongsFromServer()
+    }
+
+    private fun fetchRecommendedByMood(mood: String) {
+        val current = _musicState.value
+        if (current !is MusicUiState.Success) return
+        val currentUser = firebaseAuth.currentUser ?: return
+
+        currentUser.getIdToken(false).addOnSuccessListener { result ->
+            val idToken = result.token ?: return@addOnSuccessListener
+            viewModelScope.launch {
+                try {
+                    val response = songApiService.getRecommended("Bearer $idToken", mood)
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        val recommended = response.body()?.recommended ?: emptyList()
+                        if (recommended.isNotEmpty()) {
+                            val oldData = current.moodData
+                            val newData = when (mood) {
+                                "happy" -> oldData.copy(happy = recommended)
+                                "sad" -> oldData.copy(sad = recommended)
+                                "neutral" -> oldData.copy(neutral = recommended)
+                                else -> oldData
+                            }
+                            _musicState.postValue(current.copy(moodData = newData))
+                        }
+                    }
+                } catch (_: Exception) {
+                }
+            }
+        }
     }
 
     fun fetchSongsFromServer() {
@@ -56,20 +88,17 @@ class MusicViewModel : ViewModel() {
                         val tokenBearer = "Bearer $idToken"
 
                         // Chạy song song 2 API cùng lúc bằng async để tối ưu hóa tốc độ load app ⚡
-                        val homeDataDeferred = viewModelScope.async { authApiService.getHomeSongs(tokenBearer) }
+                        val homeDataDeferred = viewModelScope.async { songApiService.getHomeSongs(tokenBearer) }
                         val trendingDataDeferred = viewModelScope.async { songApiService.getTrendingSongs(tokenBearer) }
 
                         val homeResponse = homeDataDeferred.await()
-                        val trendingResponse = trendingDataDeferred.await()
+                        val trendingResponse = runCatching { trendingDataDeferred.await() }.getOrNull()
 
-                        if (homeResponse.isSuccessful && homeResponse.body()?.success == true &&
-                            trendingResponse.isSuccessful && trendingResponse.body()?.success == true) {
-
-                            // Đẩy cả cục dữ liệu Mood lẫn danh sách bài xếp hạng lượt nghe giảm dần qua UI
+                        if (homeResponse.isSuccessful && homeResponse.body()?.success == true) {
                             _musicState.postValue(
                                 MusicUiState.Success(
                                     moodData = homeResponse.body()!!.data,
-                                    trendingSongs = trendingResponse.body()!!.trending
+                                    trendingSongs = trendingResponse?.body()?.trending ?: emptyList()
                                 )
                             )
                         } else {

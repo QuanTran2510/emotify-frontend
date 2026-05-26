@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -23,6 +24,11 @@ fun PlaylistDetailScreen(
     playerViewModel: PlayerViewModel = viewModel()
 ) {
     val state by playerViewModel.uiState.observeAsState()
+
+    LaunchedEffect(playlistId) {
+        playerViewModel.loadPlaylistDetail(playlistId)
+    }
+
     val playlist = state?.playlists?.firstOrNull { it.id == playlistId }
 
     if (playlist == null) {

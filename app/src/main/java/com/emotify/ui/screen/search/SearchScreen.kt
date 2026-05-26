@@ -56,7 +56,8 @@ data class MoodChip(
 fun SearchScreen(
     onSongClick: (Song) -> Unit = {},
     musicViewModel: MusicViewModel = viewModel(),
-    playerViewModel: PlayerViewModel = viewModel()
+    playerViewModel: PlayerViewModel = viewModel(),
+    searchViewModel: SearchViewModel = viewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var activeMoodFilter by remember { mutableStateOf<String?>(null) }
@@ -65,6 +66,11 @@ fun SearchScreen(
     val focusManager = LocalFocusManager.current
 
     val musicState by musicViewModel.musicState.observeAsState(MusicUiState.Loading)
+    val searchState by searchViewModel.uiState.observeAsState(SearchUiState())
+
+    LaunchedEffect(searchQuery) {
+        searchViewModel.search(searchQuery)
+    }
 
     // ==================== LẤY TẤT CẢ BÀI HÁT ====================
     val allSongs = remember(musicState) {
@@ -83,16 +89,13 @@ fun SearchScreen(
         } else emptyList()
     }
 
-    // Logic lọc
-    val filteredSongs = remember(searchQuery, activeMoodFilter, allSongs) {
-        allSongs.filter { song ->
-            val matchesQuery = searchQuery.isBlank() ||
-                    song.title.contains(searchQuery, ignoreCase = true) ||
-                    song.artist.any { it.contains(searchQuery, ignoreCase = true) }
+    val apiSongs = searchState.results
+    val sourceSongs = if (searchQuery.isBlank()) allSongs else apiSongs
 
+    val filteredSongs = remember(searchQuery, activeMoodFilter, sourceSongs) {
+        sourceSongs.filter { song ->
             val matchesMood = activeMoodFilter == null || song.mood == activeMoodFilter
-
-            matchesQuery && matchesMood
+            matchesMood
         }
     }
 
@@ -186,7 +189,11 @@ fun SearchScreen(
             }
 
             else -> {
-                if (searchQuery.isBlank() && activeMoodFilter == null) {
+                if (searchState.isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else if (searchQuery.isBlank() && activeMoodFilter == null) {
                     EmptySearchUI()
                 } else if (filteredSongs.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

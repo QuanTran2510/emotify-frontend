@@ -1,21 +1,29 @@
 package com.emotify.data.remote.api
 
 import com.emotify.data.model.AuthResponse
+import com.emotify.data.model.ProfileResponse
+import com.emotify.data.model.UpdateProfileRequest
 import retrofit2.Response
-import retrofit2.http.POST
-import retrofit2.http.Header
-import com.emotify.data.model.Song
+import retrofit2.http.Body
 import retrofit2.http.GET
-import com.emotify.data.model.HomeSongsResponse
+import retrofit2.http.Header
+import retrofit2.http.PATCH
+import retrofit2.http.POST
 
 interface AuthApiService {
-    @POST("api/users/auth")
-    suspend fun syncUserWithBackend( // Đổi 'async' thành 'suspend'
+    @POST("auth")
+    suspend fun syncUserWithBackend(
         @Header("Authorization") token: String
     ): Response<AuthResponse>
 
-    @GET("api/songs/home")
-    suspend fun getHomeSongs(
+    @GET("profile")
+    suspend fun getProfile(
         @Header("Authorization") token: String
-    ): Response<HomeSongsResponse>
+    ): Response<ProfileResponse>
+
+    @PATCH("profile")
+    suspend fun updateProfile(
+        @Header("Authorization") token: String,
+        @Body request: UpdateProfileRequest
+    ): Response<ProfileResponse>
 }

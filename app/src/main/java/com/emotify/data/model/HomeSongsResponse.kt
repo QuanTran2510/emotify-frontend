@@ -1,15 +1,17 @@
 package com.emotify.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class HomeSongsResponse(
-    val success: Boolean,
-    val data: HomeMoodData,
-    val totalSongs: Int
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("data") val data: HomeMoodData = HomeMoodData(),
+    @SerializedName("totalSongs") val totalSongs: Int = 0
 )
 
 data class HomeMoodData(
-    val happy: List<Song> = emptyList(),
-    val sad: List<Song> = emptyList(),
-    val neutral: List<Song> = emptyList()
+    @SerializedName("happy") val happy: List<Song> = emptyList(),
+    @SerializedName("sad") val sad: List<Song> = emptyList(),
+    @SerializedName("neutral") val neutral: List<Song> = emptyList()
 ) {
     fun songsByMood(mood: String?): List<Song> {
         return when (mood?.lowercase()) {

@@ -1,8 +1,13 @@
 package com.emotify.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Playlist(
-    val id: String,
-    val name: String,
-    val songs: List<Song> = emptyList(),
-    val createdAt: Long = System.currentTimeMillis()
+    @SerializedName(value = "playlistId", alternate = ["id"])
+    val id: String = "",
+    @SerializedName(value = "title", alternate = ["name"])
+    val name: String = "",
+    @SerializedName("ownerId") val ownerId: String = "",
+    @SerializedName("songs") val songs: List<Song> = emptyList(),
+    @SerializedName("createdAt") val createdAt: String = ""
 )

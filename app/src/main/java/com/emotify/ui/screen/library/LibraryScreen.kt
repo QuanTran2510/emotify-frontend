@@ -48,6 +48,10 @@ fun LibraryScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     val playerState by playerViewModel.uiState.observeAsState()
 
+    LaunchedEffect(Unit) {
+        playerViewModel.refreshLibrary()
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),

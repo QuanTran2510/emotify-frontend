@@ -8,17 +8,19 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.emotify.data.model.CreatePlaylistRequest
+import com.emotify.data.model.FavoriteRequest
 import com.emotify.data.model.Playlist
+import com.emotify.data.model.PlaylistSongRequest
+import com.emotify.data.model.RecentlyPlayedRequest
+import com.emotify.data.model.RenamePlaylistRequest
 import com.emotify.data.model.Song
-import com.emotify.data.remote.api.PlaySongRequest
-import com.google.firebase.auth.FirebaseAuth
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.emotify.data.remote.api.FirebaseTokenProvider
+import com.emotify.data.remote.api.RetrofitClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.UUID
 
-// Trạng thái UI của trình phát nhạc + thư viện cá nhân.
+// Trạng thái UI của trình phát nhạc + thư viện cá nhân lấy từ backend API.
 data class PlayerUiState(
     val currentSong: Song? = null,
     val isPlaying: Boolean = false,
@@ -31,7 +33,9 @@ data class PlayerUiState(
     val favoriteSongs: List<Song> = emptyList(),
     val playlists: List<Playlist> = emptyList(),
     val recentSongs: List<Song> = emptyList(),
-    val moodHistory: List<String> = emptyList()
+    val moodHistory: List<String> = emptyList(),
+    val isLibraryLoading: Boolean = false,
+    val message: String? = null
 )
 
 class PlayerViewModel(application: Application) : AndroidViewModel(application) {
@@ -41,15 +45,14 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     private val _uiState = MutableLiveData(PlayerUiState())
     val uiState: LiveData<PlayerUiState> = _uiState
 
-    private val songApiService = com.emotify.data.remote.api.RetrofitClient.songApiService
-    private val preferences = application.getSharedPreferences("emotify_library", Application.MODE_PRIVATE)
-    private val gson = Gson()
+    private val songApiService = RetrofitClient.songApiService
+    private val libraryApiService = RetrofitClient.libraryApiService
 
     private var hasLoggedPlay = false
     private var shuffleOrder: MutableList<Int> = mutableListOf()
 
     init {
-        restoreLibrary()
+        refreshLibrary()
 
         exoPlayer.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -77,10 +80,40 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
                     if (currentPos >= 10000L && !hasLoggedPlay && state.currentSong != null) {
                         hasLoggedPlay = true
-                        logSongPlay(state.currentSong.songId)
+                        logRecentlyPlayed(state.currentSong.songId)
                     }
                 }
                 delay(500)
+            }
+        }
+    }
+
+    fun refreshLibrary() {
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            _uiState.value = _uiState.value?.copy(isLibraryLoading = true, message = null)
+            try {
+                val response = libraryApiService.getLibrary(token)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val library = response.body()!!.library
+                    _uiState.value = _uiState.value?.copy(
+                        playlists = library.playlists,
+                        favoriteSongs = library.favorites,
+                        recentSongs = library.recentlyPlayed,
+                        isLibraryLoading = false,
+                        message = null
+                    )
+                } else {
+                    _uiState.value = _uiState.value?.copy(
+                        isLibraryLoading = false,
+                        message = response.body()?.message ?: "Không tải được thư viện"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value?.copy(
+                    isLibraryLoading = false,
+                    message = e.localizedMessage ?: "Lỗi kết nối thư viện"
+                )
             }
         }
     }
@@ -107,9 +140,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             currentIndex = index,
             isPlaying = true,
             currentPositionMs = 0L,
-            recentSongs = newRecentSongs.take(30)
+            recentSongs = newRecentSongs.take(20)
         )
-        persistLibrary()
 
         exoPlayer.setMediaItem(MediaItem.fromUri(song.url))
         exoPlayer.prepare()
@@ -177,48 +209,153 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun toggleFavorite(song: Song) {
         val state = _uiState.value ?: return
         val exists = state.favoriteSongs.any { it.songId == song.songId }
-        val newFavorites = if (exists) {
+
+        val optimisticFavorites = if (exists) {
             state.favoriteSongs.filterNot { it.songId == song.songId }
         } else {
             listOf(song) + state.favoriteSongs
         }
-        _uiState.value = state.copy(favoriteSongs = newFavorites)
-        persistLibrary()
+        _uiState.value = state.copy(favoriteSongs = optimisticFavorites, message = null)
+
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            try {
+                val response = if (exists) {
+                    libraryApiService.removeFavorite(token, FavoriteRequest(song.songId))
+                } else {
+                    libraryApiService.addFavorite(token, FavoriteRequest(song.songId))
+                }
+                if (!response.isSuccessful || response.body()?.success != true) {
+                    refreshLibrary()
+                }
+            } catch (_: Exception) {
+                refreshLibrary()
+            }
+        }
     }
 
     fun createPlaylist(name: String) {
         val trimmedName = name.trim()
         if (trimmedName.isBlank()) return
-        val state = _uiState.value ?: return
-        val playlist = Playlist(id = UUID.randomUUID().toString(), name = trimmedName)
-        _uiState.value = state.copy(playlists = listOf(playlist) + state.playlists)
-        persistLibrary()
+
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            try {
+                val response = libraryApiService.createPlaylist(token, CreatePlaylistRequest(trimmedName))
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val playlist = response.body()?.playlist
+                    if (playlist != null) {
+                        val state = _uiState.value ?: PlayerUiState()
+                        _uiState.value = state.copy(playlists = listOf(playlist) + state.playlists)
+                    } else refreshLibrary()
+                } else {
+                    _uiState.value = _uiState.value?.copy(message = response.body()?.message ?: "Không tạo được playlist")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value?.copy(message = e.localizedMessage ?: "Lỗi tạo playlist")
+            }
+        }
     }
 
     fun addSongToPlaylist(song: Song, playlistId: String) {
-        val state = _uiState.value ?: return
-        val newPlaylists = state.playlists.map { playlist ->
-            if (playlist.id == playlistId && playlist.songs.none { it.songId == song.songId }) {
-                playlist.copy(songs = playlist.songs + song)
-            } else playlist
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            try {
+                val response = libraryApiService.addSongToPlaylist(
+                    token,
+                    PlaylistSongRequest(playlistId = playlistId, songId = song.songId)
+                )
+                if (response.isSuccessful && response.body()?.success == true) {
+                    loadPlaylistDetail(playlistId)
+                } else {
+                    _uiState.value = _uiState.value?.copy(message = response.body()?.message ?: "Không thêm được bài hát")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value?.copy(message = e.localizedMessage ?: "Lỗi thêm bài hát")
+            }
         }
-        _uiState.value = state.copy(playlists = newPlaylists)
-        persistLibrary()
     }
 
     fun removeSongFromPlaylist(songId: String, playlistId: String) {
-        val state = _uiState.value ?: return
-        val newPlaylists = state.playlists.map { playlist ->
-            if (playlist.id == playlistId) playlist.copy(songs = playlist.songs.filterNot { it.songId == songId }) else playlist
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            try {
+                val response = libraryApiService.removeSongFromPlaylist(
+                    token,
+                    PlaylistSongRequest(playlistId = playlistId, songId = songId)
+                )
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val state = _uiState.value ?: return@launch
+                    val newPlaylists = state.playlists.map { playlist ->
+                        if (playlist.id == playlistId) playlist.copy(songs = playlist.songs.filterNot { it.songId == songId }) else playlist
+                    }
+                    _uiState.value = state.copy(playlists = newPlaylists)
+                } else {
+                    _uiState.value = _uiState.value?.copy(message = response.body()?.message ?: "Không xoá được bài hát")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value?.copy(message = e.localizedMessage ?: "Lỗi xoá bài hát")
+            }
         }
-        _uiState.value = state.copy(playlists = newPlaylists)
-        persistLibrary()
+    }
+
+    fun renamePlaylist(playlistId: String, newTitle: String) {
+        val title = newTitle.trim()
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            try {
+                val response = libraryApiService.renamePlaylist(token, RenamePlaylistRequest(playlistId, title))
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val state = _uiState.value ?: return@launch
+                    _uiState.value = state.copy(
+                        playlists = state.playlists.map { if (it.id == playlistId) it.copy(name = title) else it }
+                    )
+                } else {
+                    _uiState.value = _uiState.value?.copy(message = response.body()?.message ?: "Không đổi tên được playlist")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value?.copy(message = e.localizedMessage ?: "Lỗi đổi tên playlist")
+            }
+        }
     }
 
     fun deletePlaylist(playlistId: String) {
-        val state = _uiState.value ?: return
-        _uiState.value = state.copy(playlists = state.playlists.filterNot { it.id == playlistId })
-        persistLibrary()
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            try {
+                val response = libraryApiService.deletePlaylist(token, playlistId)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val state = _uiState.value ?: return@launch
+                    _uiState.value = state.copy(playlists = state.playlists.filterNot { it.id == playlistId })
+                } else {
+                    _uiState.value = _uiState.value?.copy(message = response.body()?.message ?: "Không xoá được playlist")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value?.copy(message = e.localizedMessage ?: "Lỗi xoá playlist")
+            }
+        }
+    }
+
+    fun loadPlaylistDetail(playlistId: String) {
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            try {
+                val response = libraryApiService.getPlaylistDetail(token, playlistId)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val detail = response.body()?.playlist ?: return@launch
+                    val state = _uiState.value ?: PlayerUiState()
+                    val exists = state.playlists.any { it.id == detail.id }
+                    val playlists = if (exists) {
+                        state.playlists.map { if (it.id == detail.id) detail else it }
+                    } else {
+                        listOf(detail) + state.playlists
+                    }
+                    _uiState.value = state.copy(playlists = playlists)
+                }
+            } catch (_: Exception) {
+            }
+        }
     }
 
     fun addMoodHistory(mood: String) {
@@ -229,7 +366,6 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
         }
         val newHistory = listOf("$label • ${System.currentTimeMillis()}") + ((_uiState.value?.moodHistory ?: emptyList()))
         _uiState.value = _uiState.value?.copy(moodHistory = newHistory.take(20))
-        persistLibrary()
     }
 
     fun formatDuration(ms: Long): String {
@@ -252,51 +388,14 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             .toMutableList()
     }
 
-    private fun restoreLibrary() {
-        val favoriteSongs: List<Song> = readJson("favorites") ?: emptyList()
-        val playlists: List<Playlist> = readJson("playlists") ?: emptyList()
-        val recentSongs: List<Song> = readJson("recent_songs") ?: emptyList()
-        val moodHistory: List<String> = readJson("mood_history") ?: emptyList()
-
-        _uiState.value = _uiState.value?.copy(
-            favoriteSongs = favoriteSongs,
-            playlists = playlists,
-            recentSongs = recentSongs,
-            moodHistory = moodHistory
-        )
-    }
-
-    private fun persistLibrary() {
-        val state = _uiState.value ?: return
-        preferences.edit()
-            .putString("favorites", gson.toJson(state.favoriteSongs))
-            .putString("playlists", gson.toJson(state.playlists))
-            .putString("recent_songs", gson.toJson(state.recentSongs))
-            .putString("mood_history", gson.toJson(state.moodHistory))
-            .apply()
-    }
-
-    private inline fun <reified T> readJson(key: String): T? {
-        val json = preferences.getString(key, null) ?: return null
-        return runCatching { gson.fromJson<T>(json, object : TypeToken<T>() {}.type) }.getOrNull()
-    }
-
-    private fun logSongPlay(songId: String) {
+    private fun logRecentlyPlayed(songId: String) {
         if (songId.isBlank()) return
-        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
-
-        currentUser.getIdToken(false).addOnSuccessListener { result ->
-            val idToken = result.token
-            if (idToken != null) {
-                viewModelScope.launch {
-                    try {
-                        songApiService.increaseSongPlayCount(
-                            token = "Bearer $idToken",
-                            request = PlaySongRequest(songId = songId)
-                        )
-                    } catch (_: Exception) {
-                    }
-                }
+        viewModelScope.launch {
+            val token = FirebaseTokenProvider.bearerToken() ?: return@launch
+            try {
+                libraryApiService.addRecentlyPlayed(token, RecentlyPlayedRequest(songId = songId))
+                refreshLibrary()
+            } catch (_: Exception) {
             }
         }
     }

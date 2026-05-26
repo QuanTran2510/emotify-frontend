@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.CustomCredential
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -100,11 +101,16 @@ class AuthViewModel : ViewModel() {
                 val result = credentialManager.getCredential(context = context, request = request)
                 val credential = result.credential
 
-                if (credential is GoogleIdTokenCredential) {
-                    val firebaseCredential = GoogleAuthProvider.getCredential(credential.idToken, null)
+                if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                    val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                    val firebaseCredential = GoogleAuthProvider.getCredential(googleCredential.idToken, null)
                     firebaseAuth.signInWithCredential(firebaseCredential)
                         .addOnSuccessListener { syncWithBackend() }
-                        .addOnFailureListener { _authState.value = AuthState.Error("Lỗi kết nối Firebase với Google") }
+                        .addOnFailureListener { error ->
+                            _authState.value = AuthState.Error(error.localizedMessage ?: "Lỗi kết nối Firebase với Google")
+                        }
+                } else {
+                    _authState.value = AuthState.Error("Không lấy được Google credential hợp lệ")
                 }
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.localizedMessage ?: "Huỷ đăng nhập Google")
@@ -153,7 +159,7 @@ class AuthViewModel : ViewModel() {
         // 3. Gọi lệnh mở màn hình đăng nhập (Truyền biến activity an toàn đã check ở trên vào)
         LoginManager.getInstance().logInWithReadPermissions(
             activity,
-            listOf("public_profile")
+            listOf("public_profile", "email")
         )
     }
 
@@ -172,7 +178,7 @@ class AuthViewModel : ViewModel() {
             if (idToken != null) {
                 viewModelScope.launch {
                     try {
-                        // Gửi token dạng Bearer lên api/users/auth của bạn
+                        // Gửi token dạng Bearer lên /auth của backend
                         val response = authApiService.syncUserWithBackend("Bearer $idToken")
                         if (response.isSuccessful && response.body()?.success == true) {
                             val userProfile = response.body()!!.user
